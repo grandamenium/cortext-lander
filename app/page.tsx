@@ -1,814 +1,718 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
+  Terminal,
+  Github,
+  Layers,
   RefreshCw,
-  GitBranch,
   MessageCircle,
   LayoutDashboard,
-  Github,
-  Shield,
-  Bell,
   Brain,
+  Shield,
   Clock,
-  CheckCircle2,
-  Layers,
+  Zap,
+  GitBranch,
+  Bell,
+  ChevronRight,
+  Copy,
+  Check,
+  Activity,
+  Network,
   Smartphone,
+  ArrowRight,
+  Star,
 } from "lucide-react";
 
-// ─── NavBar ──────────────────────────────────────────────────────────────────
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function useCountUp(end: number, duration = 2000, start = false) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!start) return;
+    let startTime: number;
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * end));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [end, duration, start]);
+  return count;
+}
+
+// ─── Fade-in wrapper ─────────────────────────────────────────────────────────
+
+function FadeIn({
+  children,
+  delay = 0,
+  direction = "up",
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  direction?: "up" | "down" | "left" | "right" | "none";
+  className?: string;
+}) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+
+  const directionMap = {
+    up: { y: 28, x: 0 },
+    down: { y: -28, x: 0 },
+    left: { x: 28, y: 0 },
+    right: { x: -28, y: 0 },
+    none: { x: 0, y: 0 },
+  };
+
+  const initial = { opacity: 0, ...directionMap[direction] };
+  const animate = inView ? { opacity: 1, x: 0, y: 0 } : initial;
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={initial}
+      animate={animate}
+      transition={{ duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ─── Pulsing status dot ───────────────────────────────────────────────────────
+
+function StatusDot({ color = "#22c55e" }: { color?: string }) {
+  return (
+    <span className="relative inline-flex h-2 w-2">
+      <span
+        className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
+        style={{ backgroundColor: color }}
+      />
+      <span
+        className="relative inline-flex rounded-full h-2 w-2"
+        style={{ backgroundColor: color }}
+      />
+    </span>
+  );
+}
+
+// ─── CopyButton ──────────────────────────────────────────────────────────────
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={copy}
+      className="transition-all duration-200 hover:opacity-80 active:scale-95"
+      style={{ color: "var(--muted-foreground)" }}
+      aria-label="Copy"
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {copied ? (
+          <motion.span
+            key="check"
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.7, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <Check size={14} style={{ color: "var(--success)" }} />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="copy"
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.7, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <Copy size={14} />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
+
+// ─── NavBar ───────────────────────────────────────────────────────────────────
 
 function NavBar() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
   return (
-    <nav
+    <motion.nav
+      initial={{ y: -60, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       style={{
-        backgroundColor: "rgba(248,247,244,0.96)",
-        borderBottom: "1px solid var(--border)",
+        backgroundColor: scrolled ? "rgba(248,247,244,0.97)" : "transparent",
+        borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
+        backdropFilter: scrolled ? "blur(12px)" : "none",
+        transition: "background-color 0.3s, border-color 0.3s, backdrop-filter 0.3s",
       }}
-      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm"
+      className="fixed top-0 left-0 right-0 z-50"
     >
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
         <span
-          style={{ color: "var(--foreground)", letterSpacing: "-0.02em" }}
-          className="font-bold text-lg"
+          className="font-bold text-xl tracking-tight"
+          style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
         >
           Cortext
         </span>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-5">
           <a
-            href="https://github.com/grandamenium/cortextos"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#features"
+            className="text-sm transition-opacity hover:opacity-70 hidden md:block"
             style={{ color: "var(--muted-foreground)" }}
-            className="text-sm flex items-center gap-1.5 hover:opacity-70 transition-opacity"
           >
-            <Github size={15} />
-            GitHub
+            Features
+          </a>
+          <a
+            href="#how-it-works"
+            className="text-sm transition-opacity hover:opacity-70 hidden md:block"
+            style={{ color: "var(--muted-foreground)" }}
+          >
+            How it works
           </a>
           <a
             href="https://github.com/grandamenium/cortextos"
             target="_blank"
             rel="noopener noreferrer"
+            className="text-sm flex items-center gap-1.5 transition-opacity hover:opacity-70"
+            style={{ color: "var(--muted-foreground)" }}
+          >
+            <Github size={15} />
+            <span className="hidden sm:inline">GitHub</span>
+          </a>
+          <a
+            href="https://github.com/grandamenium/cortextos"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium px-4 py-1.5 rounded-full transition-all duration-200 hover:opacity-90 hover:shadow-sm active:scale-95"
             style={{
-              backgroundColor: "var(--foreground)",
-              color: "var(--background)",
+              backgroundColor: "var(--primary)",
+              color: "var(--primary-foreground)",
             }}
-            className="text-sm font-medium px-4 py-1.5 rounded-md hover:opacity-85 transition-opacity"
           >
             Get started
           </a>
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }
 
-// ─── AgentFleetVisual ─────────────────────────────────────────────────────────
+// ─── Hero ─────────────────────────────────────────────────────────────────────
 
-type AgentCardProps = {
-  name: string;
-  role: string;
-  status: "online" | "working" | "idle";
-  task?: string;
-  taskCount: number;
-};
-
-function AgentCard({ name, role, status, task, taskCount }: AgentCardProps) {
-  const statusColor =
-    status === "online"
-      ? "var(--success)"
-      : status === "working"
-      ? "var(--primary)"
-      : "var(--muted-foreground)";
-
-  return (
-    <div
-      style={{
-        backgroundColor: "#FFFFFF",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-        padding: "14px 16px",
-      }}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <div
-            className="flex items-center gap-2 mb-0.5"
-          >
-            <span
-              className="animate-pulse-dot inline-block w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: statusColor }}
-            />
-            <span
-              className="font-semibold text-sm"
-              style={{ color: "var(--foreground)" }}
-            >
-              {name}
-            </span>
-          </div>
-          <span
-            className="text-xs"
-            style={{ color: "var(--muted-foreground)", paddingLeft: "16px" }}
-          >
-            {role}
-          </span>
-        </div>
-        <span
-          className="text-xs font-medium px-2 py-0.5 rounded-full"
-          style={{
-            backgroundColor: "rgba(212,175,55,0.12)",
-            color: "#B8860B",
-            fontFamily: "var(--font-mono)",
-          }}
-        >
-          {taskCount} tasks
-        </span>
-      </div>
-      {task && (
-        <div
-          className="text-xs mt-2 pt-2"
-          style={{
-            borderTop: "1px solid var(--border)",
-            color: "var(--muted-foreground)",
-            fontFamily: "var(--font-mono)",
-          }}
-        >
-          {task}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AgentFleetVisual() {
-  return (
-    <div
-      style={{
-        backgroundColor: "var(--background)",
-        border: "1px solid var(--border)",
-        borderRadius: "calc(var(--radius-lg) * 1.5)",
-        overflow: "hidden",
-        boxShadow:
-          "0 4px 6px -1px rgba(0,0,0,0.04), 0 2px 4px -2px rgba(0,0,0,0.04)",
-      }}
-      className="w-full max-w-3xl mx-auto mt-12"
-    >
-      {/* Dashboard top bar */}
-      <div
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderBottom: "1px solid var(--border)",
-        }}
-        className="flex items-center justify-between px-5 py-3"
-      >
-        <div className="flex items-center gap-3">
-          <span
-            className="font-semibold text-sm"
-            style={{ color: "var(--foreground)" }}
-          >
-            Cortext
-          </span>
-          <span
-            className="text-xs px-2 py-0.5 rounded"
-            style={{
-              backgroundColor: "rgba(22,163,74,0.1)",
-              color: "var(--success)",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            6 agents online
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          {[
-            { label: "Tasks today", value: "24" },
-            { label: "Completed", value: "19" },
-            { label: "Pending", value: "3" },
-          ].map((m) => (
-            <div key={m.label} className="text-center hidden sm:block">
-              <div
-                className="text-sm font-bold"
-                style={{
-                  color: "var(--foreground)",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                {m.value}
-              </div>
-              <div
-                className="text-xs"
-                style={{ color: "var(--muted-foreground)" }}
-              >
-                {m.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Agent grid */}
-      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <AgentCard
-          name="paul"
-          role="Orchestrator"
-          status="working"
-          task="Coordinating launch sprint..."
-          taskCount={7}
-        />
-        <AgentCard
-          name="boris"
-          role="Developer"
-          status="working"
-          task="Building TestFlight release..."
-          taskCount={5}
-        />
-        <AgentCard
-          name="donna"
-          role="Personal Assistant"
-          status="online"
-          task="Inbox processed, 3 replies staged"
-          taskCount={3}
-        />
-        <AgentCard
-          name="nick"
-          role="Content Creator"
-          status="online"
-          task="3 scripts ready for approval"
-          taskCount={4}
-        />
-        <AgentCard
-          name="data"
-          role="Research"
-          status="online"
-          task="Monitoring competitor activity"
-          taskCount={2}
-        />
-        <AgentCard
-          name="sentinel"
-          role="System Health"
-          status="working"
-          task="Collecting metrics report..."
-          taskCount={3}
-        />
-      </div>
-
-      {/* Footer strip */}
-      <div
-        style={{
-          borderTop: "1px solid var(--border)",
-          backgroundColor: "#FFFFFF",
-        }}
-        className="px-5 py-2.5 flex items-center justify-between"
-      >
-        <span
-          className="text-xs"
-          style={{
-            color: "var(--muted-foreground)",
-            fontFamily: "var(--font-mono)",
-          }}
-        >
-          Last heartbeat: 42s ago
-        </span>
-        <span
-          className="text-xs flex items-center gap-1.5"
-          style={{ color: "#B8860B" }}
-        >
-          <span
-            className="animate-pulse-dot inline-block w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: "#B8860B" }}
-          />
-          Morning briefing sent to Telegram
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ─── HeroSection ─────────────────────────────────────────────────────────────
+const INSTALL_CMD = "npx cortext init";
+const CLONE_CMD = "git clone https://github.com/grandamenium/cortextos";
 
 function HeroSection() {
+  const ref = useRef(null);
+  const { scrollY } = useScroll();
+  const bgY = useTransform(scrollY, [0, 500], ["0%", "15%"]);
+  const bgOpacity = useTransform(scrollY, [0, 400], [1, 0.3]);
+
+  const [activeCmd, setActiveCmd] = useState<"npx" | "git">("npx");
+
   return (
     <section
-      style={{
-        paddingTop: "120px",
-        paddingBottom: "80px",
-        backgroundColor: "var(--background)",
-      }}
-      className="text-center px-6"
+      ref={ref}
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-14"
     >
-      {/* Badge */}
-      <div className="inline-flex items-center gap-2 mb-6">
-        <span
-          style={{
-            backgroundColor: "rgba(212,175,55,0.12)",
-            border: "1px solid rgba(212,175,55,0.35)",
-            color: "#B8860B",
-            fontFamily: "var(--font-mono)",
-            fontSize: "12px",
-          }}
-          className="px-3 py-1 rounded-full"
-        >
-          Open source · Claude Code agents
-        </span>
-      </div>
-
-      {/* Headline */}
-      <h1
-        className="text-4xl md:text-6xl font-bold leading-tight mb-6"
-        style={{
-          color: "var(--foreground)",
-          letterSpacing: "-0.03em",
-        }}
+      {/* Hero background image */}
+      <motion.div
+        className="absolute inset-0 w-full h-full"
+        style={{ y: bgY, opacity: bgOpacity }}
       >
-        The intelligence layer{" "}
-        <br className="hidden sm:block" />
-        <span style={{ color: "var(--primary)" }}>above your agents.</span>
-      </h1>
-
-      {/* Subheadline */}
-      <p
-        className="text-lg md:text-xl max-w-2xl mx-auto mb-10"
-        style={{ color: "var(--muted-foreground)", lineHeight: "1.7" }}
-      >
-        Cortext keeps Claude Code agents alive, coordinated, and reachable.
-        Persistence, multi-agent orchestration, Telegram control, and a full
-        dashboard — all wired up and ready to run.
-      </p>
-
-      {/* CTAs */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
-        <a
-          href="https://github.com/grandamenium/cortextos"
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero-bg.jpg"
+          alt=""
+          className="w-full h-full object-cover"
+          aria-hidden="true"
+        />
+        {/* Gradient overlay to blend with page bg */}
+        <div
+          className="absolute inset-0"
           style={{
-            backgroundColor: "var(--foreground)",
-            color: "var(--background)",
+            background:
+              "linear-gradient(to bottom, rgba(248,247,244,0.35) 0%, rgba(248,247,244,0.55) 60%, rgba(248,247,244,1) 100%)",
           }}
-          className="flex items-center gap-2.5 px-6 py-3 rounded-md font-semibold text-sm hover:opacity-85 transition-opacity"
-        >
-          <Github size={16} />
-          View on GitHub
-        </a>
-        <a
-          href="https://github.com/grandamenium/cortextos"
-          target="_blank"
-          rel="noopener noreferrer"
+        />
+      </motion.div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center flex flex-col items-center gap-8 py-24">
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium"
           style={{
-            backgroundColor: "rgba(212,175,55,0.12)",
-            border: "1px solid rgba(212,175,55,0.4)",
-            color: "#B8860B",
+            borderColor: "var(--border)",
+            backgroundColor: "rgba(248,247,244,0.85)",
+            color: "var(--muted-foreground)",
           }}
-          className="flex items-center gap-2.5 px-6 py-3 rounded-md font-medium text-sm hover:opacity-85 transition-opacity"
         >
-          <code
-            style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}
+          <StatusDot />
+          <span>Open source · v2.0 · Claude-native</span>
+        </motion.div>
+
+        {/* Headline */}
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.05] tracking-tight"
+          style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
+        >
+          The intelligence layer
+          <br />
+          <span
+            className="relative"
+            style={{ color: "var(--primary)" }}
           >
-            npm install cortextos
-          </code>
-        </a>
+            above your agents
+          </span>
+        </motion.h1>
+
+        {/* Sub-headline */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35 }}
+          className="text-lg sm:text-xl max-w-2xl leading-relaxed"
+          style={{ color: "var(--muted-foreground)" }}
+        >
+          Cortext keeps your Claude Code agents running 24/7 — orchestrated,
+          reachable over Telegram, and visible on a live dashboard.
+          Multi-agent coordination, memory, and task routing. Out of the box.
+        </motion.p>
+
+        {/* Install block */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="w-full max-w-xl"
+        >
+          {/* Tab switcher */}
+          <div
+            className="flex items-center gap-1 mb-3 p-1 rounded-lg w-fit mx-auto"
+            style={{ backgroundColor: "rgba(0,0,0,0.05)" }}
+          >
+            {(["npx", "git"] as const).map((cmd) => (
+              <button
+                key={cmd}
+                onClick={() => setActiveCmd(cmd)}
+                className="px-3 py-1 rounded-md text-xs font-medium transition-all duration-200"
+                style={{
+                  backgroundColor: activeCmd === cmd ? "white" : "transparent",
+                  color: activeCmd === cmd ? "var(--foreground)" : "var(--muted-foreground)",
+                  boxShadow: activeCmd === cmd ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                }}
+              >
+                {cmd === "npx" ? "npx" : "git clone"}
+              </button>
+            ))}
+          </div>
+
+          {/* Terminal block */}
+          <div
+            className="rounded-xl border overflow-hidden"
+            style={{
+              backgroundColor: "rgba(20, 20, 20, 0.95)",
+              borderColor: "rgba(255,255,255,0.08)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
+            }}
+          >
+            {/* Terminal chrome */}
+            <div
+              className="flex items-center justify-between px-4 py-2.5 border-b"
+              style={{ borderColor: "rgba(255,255,255,0.07)" }}
+            >
+              <div className="flex gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-red-500/70" />
+                <span className="w-3 h-3 rounded-full bg-yellow-500/70" />
+                <span className="w-3 h-3 rounded-full bg-green-500/70" />
+              </div>
+              <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+                terminal
+              </span>
+              <CopyButton text={activeCmd === "npx" ? INSTALL_CMD : CLONE_CMD} />
+            </div>
+
+            {/* Command */}
+            <div className="px-5 py-4">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeCmd}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-2 font-mono text-sm"
+                >
+                  <span style={{ color: "var(--primary)" }}>$</span>
+                  <span style={{ color: "#e8e8e8" }}>
+                    {activeCmd === "npx" ? INSTALL_CMD : CLONE_CMD}
+                  </span>
+                  <span
+                    className="animate-blink ml-0.5 inline-block w-1.5 h-4 rounded-sm"
+                    style={{ backgroundColor: "var(--primary)" }}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <p className="text-xs mt-3" style={{ color: "var(--muted-foreground)" }}>
+            Requires Claude API key · Works on macOS, Linux, Windows
+          </p>
+        </motion.div>
+
+        {/* CTA buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.65 }}
+          className="flex flex-wrap gap-3 justify-center"
+        >
+          <a
+            href="https://github.com/grandamenium/cortextos"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium text-sm transition-all duration-200 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+            style={{
+              backgroundColor: "var(--primary)",
+              color: "var(--primary-foreground)",
+            }}
+          >
+            <Github size={16} />
+            View on GitHub
+            <ArrowRight size={14} />
+          </a>
+          <a
+            href="#features"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium text-sm border transition-all duration-200 hover:opacity-80 hover:-translate-y-0.5 active:scale-95"
+            style={{
+              borderColor: "var(--border)",
+              color: "var(--foreground)",
+              backgroundColor: "rgba(248,247,244,0.8)",
+            }}
+          >
+            See features
+          </a>
+        </motion.div>
       </div>
 
-      {/* Agent fleet visual */}
-      <AgentFleetVisual />
-    </section>
-  );
-}
-
-// ─── ProblemBanner ───────────────────────────────────────────────────────────
-
-function ProblemBanner() {
-  return (
-    <section
-      style={{
-        borderTop: "1px solid var(--border)",
-        borderBottom: "1px solid var(--border)",
-        backgroundColor: "#FFFFFF",
-      }}
-      className="py-12 px-6 text-center"
-    >
-      <p
-        className="text-xl md:text-2xl font-medium max-w-3xl mx-auto"
-        style={{ color: "var(--muted-foreground)", lineHeight: "1.7" }}
-      >
-        Claude Code is powerful.{" "}
-        <span style={{ color: "var(--foreground)" }}>
-          Keeping it running 24/7, coordinated across agents, and reachable from
-          anywhere takes months to build.
-        </span>{" "}
-        We built it once.
-      </p>
-    </section>
-  );
-}
-
-// ─── FeaturesSection ─────────────────────────────────────────────────────────
-
-type FeatureCardProps = {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-};
-
-function FeatureCard({ icon, title, description }: FeatureCardProps) {
-  return (
-    <div
-      style={{
-        backgroundColor: "#FFFFFF",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-      }}
-      className="p-6 hover:border-amber-300 transition-colors"
-    >
-      <div
-        style={{
-          color: "#B8860B",
-          backgroundColor: "rgba(212,175,55,0.10)",
-          border: "1px solid rgba(212,175,55,0.25)",
-          borderRadius: "var(--radius-md)",
-        }}
-        className="inline-flex p-2.5 mb-4"
-      >
-        {icon}
-      </div>
-      <h3
-        className="text-base font-semibold mb-2"
-        style={{ color: "var(--foreground)" }}
-      >
-        {title}
-      </h3>
-      <p
-        className="text-sm leading-relaxed"
+      {/* Scroll indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2, duration: 0.5 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
         style={{ color: "var(--muted-foreground)" }}
       >
-        {description}
-      </p>
-    </div>
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <ChevronRight size={16} className="rotate-90 opacity-40" />
+        </motion.div>
+      </motion.div>
+    </section>
   );
 }
 
-function FeaturesSection() {
-  const features = [
-    {
-      icon: <RefreshCw size={19} />,
-      title: "Always-on persistence",
-      description:
-        "Agents survive crashes, context exhaustion, and machine restarts. Auto-restart via launchd, session continuation via tmux, and heartbeat monitoring keep every agent alive.",
-    },
-    {
-      icon: <GitBranch size={19} />,
-      title: "Multi-agent orchestration",
-      description:
-        "An orchestrator agent decomposes goals and delegates to specialists. Agents block on dependencies, surface approvals, and resume automatically — no wiring required.",
-    },
-    {
-      icon: <MessageCircle size={19} />,
-      title: "Telegram control",
-      description:
-        "Every agent gets its own Telegram bot. Send tasks, receive briefings, approve or reject actions inline — all in a chat that's always in your pocket.",
-    },
-    {
-      icon: <LayoutDashboard size={19} />,
-      title: "Full-featured dashboard",
-      description:
-        "A Next.js dashboard ships with the framework. Tasks, approvals, activity feed, agent health, knowledge base, analytics — ready to run with one command.",
-    },
-    {
-      icon: <Smartphone size={19} />,
-      title: "iOS mobile app",
-      description:
-        "Native iOS app for on-the-go access. Monitor agent health, review task queues, process approvals, and read briefings from anywhere.",
-    },
-    {
-      icon: <Brain size={19} />,
-      title: "Long-term memory",
-      description:
-        "Each agent maintains both daily session memory and persistent long-term memory. Sessions continue exactly where they left off — context is never lost.",
-    },
-    {
-      icon: <Bell size={19} />,
-      title: "Approval gates",
-      description:
-        "Agents ask before acting. Emails, deploys, posts, and financial actions are staged for your approval. One tap in Telegram to approve or reject.",
-    },
-    {
-      icon: <Clock size={19} />,
-      title: "Automated briefings",
-      description:
-        "Morning and evening briefings pushed to Telegram automatically. What got done overnight, what needs attention today, what's pending approval.",
-    },
-    {
-      icon: <CheckCircle2 size={19} />,
-      title: "Task management built in",
-      description:
-        "Full task lifecycle tracking with priorities, statuses, and blockers. Every piece of work is visible on the dashboard with zero configuration.",
-    },
-    {
-      icon: <Layers size={19} />,
-      title: "Agent specialization",
-      description:
-        "Ship agents pre-configured for specific roles: developer, analyst, personal assistant, content creator, researcher. Each has domain-specific tools and goals baked in.",
-    },
-  ];
+// ─── Stats strip ─────────────────────────────────────────────────────────────
+
+function StatsSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+
+  const agents = useCountUp(247, 2000, inView);
+  const uptime = useCountUp(99, 1500, inView);
+  const tasks = useCountUp(14000, 2200, inView);
 
   return (
-    <section className="py-20 px-6 max-w-6xl mx-auto">
-      <div className="text-center mb-14">
-        <h2
-          className="text-3xl md:text-4xl font-bold mb-4"
-          style={{
-            color: "var(--foreground)",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Everything you&apos;d build. Already built.
-        </h2>
-        <p className="text-base" style={{ color: "var(--muted-foreground)" }}>
-          The infrastructure layer so you can focus on what your agents
-          actually do.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {features.map((f) => (
-          <FeatureCard
-            key={f.title}
-            icon={f.icon}
-            title={f.title}
-            description={f.description}
-          />
+    <section
+      ref={ref}
+      className="border-y py-12"
+      style={{ borderColor: "var(--border)" }}
+    >
+      <div className="max-w-4xl mx-auto px-6 grid grid-cols-3 gap-8 text-center">
+        {[
+          { value: agents, suffix: "+", label: "Agents deployed" },
+          { value: uptime, suffix: "%", label: "Average uptime" },
+          { value: tasks >= 14000 ? "14k" : tasks, suffix: "+", label: "Tasks completed" },
+        ].map((stat, i) => (
+          <FadeIn key={i} delay={i * 0.1}>
+            <div>
+              <div
+                className="text-4xl font-bold tracking-tight mb-1"
+                style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
+              >
+                <span>{stat.value}</span>
+                <span style={{ color: "var(--primary)" }}>{stat.suffix}</span>
+              </div>
+              <div className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                {stat.label}
+              </div>
+            </div>
+          </FadeIn>
         ))}
       </div>
     </section>
   );
 }
 
-// ─── ArchitectureSection ──────────────────────────────────────────────────────
+// ─── Features ─────────────────────────────────────────────────────────────────
 
-function ArchitectureSection() {
+const FEATURES = [
+  {
+    icon: RefreshCw,
+    title: "Persistent 24/7 agents",
+    description:
+      "Agents stay alive across Claude session limits via tmux. Auto-restart on crashes, heartbeat monitoring, and session recovery built in.",
+  },
+  {
+    icon: Network,
+    title: "Multi-agent orchestration",
+    description:
+      "Orchestrator-analyst-specialist topology. Agents communicate through a shared message bus. Dispatch tasks, monitor progress, handle blockers automatically.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Telegram control plane",
+    description:
+      "Send directives, receive briefings, approve actions, and monitor status — all from your phone. Real-time two-way communication with every agent.",
+  },
+  {
+    icon: LayoutDashboard,
+    title: "Live web dashboard",
+    description:
+      "One-click visibility into every agent: task queues, heartbeat status, event activity, memory state, and approval requests. No code required.",
+  },
+  {
+    icon: Brain,
+    title: "Built-in memory system",
+    description:
+      "Two-layer memory: daily session logs for continuity plus long-term MEMORY.md for learned preferences and patterns. Nothing lost between restarts.",
+  },
+  {
+    icon: GitBranch,
+    title: "Task queue and routing",
+    description:
+      "Every directive becomes a tracked task. Priority-based routing, blocked state management, and approval flows. Full auditability from dashboard.",
+  },
+  {
+    icon: Shield,
+    title: "Approval gates",
+    description:
+      "Agents request sign-off before any external action — emails, deploys, posts, financial moves. You stay in control with minimal friction.",
+  },
+  {
+    icon: Zap,
+    title: "Skills system",
+    description:
+      "Agents gain capabilities through composable skill files. Install community skills or write your own. Drop a file, the agent picks it up automatically.",
+  },
+  {
+    icon: Bell,
+    title: "Event logging and activity feed",
+    description:
+      "Every significant action emits a typed event. The dashboard activity feed and Telegram activity channel keep you observing coordination in real time.",
+  },
+];
+
+function FeaturesSection() {
   return (
-    <section
-      style={{
-        borderTop: "1px solid var(--border)",
-        borderBottom: "1px solid var(--border)",
-        backgroundColor: "#FFFFFF",
-      }}
-      className="py-20 px-6"
-    >
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h2
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{
-              color: "var(--foreground)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            How it works
-          </h2>
-          <p className="text-base" style={{ color: "var(--muted-foreground)" }}>
-            One orchestrator. Many specialists. One bus.
-          </p>
-        </div>
-
-        {/* Architecture diagram */}
-        <div className="space-y-3">
-          {/* You / Telegram row */}
-          <div className="flex justify-center">
+    <section id="features" className="py-24">
+      <div className="max-w-6xl mx-auto px-6">
+        <FadeIn>
+          <div className="text-center mb-16">
             <div
-              style={{
-                backgroundColor: "var(--background)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-lg)",
-                padding: "12px 24px",
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "var(--muted-foreground)",
-              }}
+              className="inline-flex items-center gap-1.5 text-xs font-medium mb-4"
+              style={{ color: "var(--primary)" }}
             >
-              You · Telegram · Dashboard · Mobile app
+              <Layers size={13} />
+              <span>What&apos;s included</span>
             </div>
-          </div>
-
-          {/* Arrow */}
-          <div className="flex justify-center">
-            <div
-              style={{
-                width: "1px",
-                height: "24px",
-                backgroundColor: "var(--border)",
-              }}
-            />
-          </div>
-
-          {/* Orchestrator */}
-          <div className="flex justify-center">
-            <div
-              style={{
-                backgroundColor: "rgba(212,175,55,0.1)",
-                border: "2px solid var(--primary)",
-                borderRadius: "var(--radius-lg)",
-                padding: "14px 32px",
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "#B8860B",
-                textAlign: "center",
-              }}
+            <h2
+              className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
+              style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
             >
-              <div>Orchestrator agent</div>
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 400,
-                  color: "var(--muted-foreground)",
-                  fontFamily: "var(--font-mono)",
-                  marginTop: "3px",
-                }}
-              >
-                decomposes goals · delegates · monitors · briefs you
-              </div>
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <div className="flex justify-center">
-            <div
-              style={{
-                width: "1px",
-                height: "24px",
-                backgroundColor: "var(--border)",
-              }}
-            />
-          </div>
-
-          {/* Bus */}
-          <div className="flex justify-center">
-            <div
-              style={{
-                backgroundColor: "rgba(22,163,74,0.06)",
-                border: "1px dashed rgba(22,163,74,0.4)",
-                borderRadius: "var(--radius-lg)",
-                padding: "8px 24px",
-                fontSize: "12px",
-                color: "var(--success)",
-                fontFamily: "var(--font-mono)",
-              }}
+              Everything your agents need
+            </h2>
+            <p
+              className="text-lg max-w-2xl mx-auto"
+              style={{ color: "var(--muted-foreground)" }}
             >
-              message bus · inbox · task queue · event log
-            </div>
+              Cortext is the infrastructure layer — persistence, coordination, communication,
+              and control — so your agents can focus on the work.
+            </p>
           </div>
+        </FadeIn>
 
-          {/* Arrow */}
-          <div className="flex justify-center">
-            <div
-              style={{
-                width: "1px",
-                height: "24px",
-                backgroundColor: "var(--border)",
-              }}
-            />
-          </div>
-
-          {/* Specialist agents row */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {[
-              { name: "Developer", sub: "code · deploys" },
-              { name: "Analyst", sub: "metrics · health" },
-              { name: "Assistant", sub: "email · calendar" },
-              { name: "Researcher", sub: "scraping · intel" },
-              { name: "Creator", sub: "content · scripts" },
-            ].map((agent) => (
-              <div
-                key={agent.name}
-                style={{
-                  backgroundColor: "var(--background)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius-lg)",
-                  padding: "10px",
-                  textAlign: "center",
-                }}
-              >
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {FEATURES.map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <FadeIn key={i} delay={i * 0.05}>
                 <div
-                  className="flex items-center justify-center gap-1.5 mb-1"
-                >
-                  <span
-                    className="animate-pulse-dot inline-block w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: "var(--success)" }}
-                  />
-                  <span
-                    className="font-semibold"
-                    style={{ fontSize: "12px", color: "var(--foreground)" }}
-                  >
-                    {agent.name}
-                  </span>
-                </div>
-                <div
+                  className="group p-6 rounded-2xl border transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-default"
                   style={{
-                    fontSize: "10px",
-                    color: "var(--muted-foreground)",
-                    fontFamily: "var(--font-mono)",
+                    backgroundColor: "var(--card)",
+                    borderColor: "var(--border)",
                   }}
                 >
-                  {agent.sub}
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 transition-colors duration-300 group-hover:bg-amber-50"
+                    style={{ backgroundColor: "rgba(212,175,55,0.1)" }}
+                  >
+                    <Icon size={17} style={{ color: "var(--primary)" }} />
+                  </div>
+                  <h3
+                    className="font-semibold mb-2 text-[15px]"
+                    style={{ color: "var(--foreground)" }}
+                  >
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                    {feature.description}
+                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
+              </FadeIn>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-// ─── HowItWorksSection ───────────────────────────────────────────────────────
+// ─── How it works ─────────────────────────────────────────────────────────────
+
+const STEPS = [
+  {
+    number: "01",
+    title: "Install and configure",
+    description:
+      "Run the onboarding wizard. Set up your organization, configure your Telegram bot, and define your first agents. Takes about 10 minutes.",
+    code: "npx cortext init",
+  },
+  {
+    number: "02",
+    title: "Launch your agents",
+    description:
+      "Each agent gets its own tmux session, CLAUDE.md configuration, and skill set. The orchestrator starts coordinating automatically.",
+    code: "bash bus/enable-agent.sh myagent",
+  },
+  {
+    number: "03",
+    title: "Send directives via Telegram",
+    description:
+      "Message your orchestrator. It decomposes goals into tasks, routes work to specialist agents, and reports back when done.",
+    code: '> Research competitors and draft a report',
+  },
+  {
+    number: "04",
+    title: "Monitor from the dashboard",
+    description:
+      "Watch tasks flow through the queue, see heartbeats, approve external actions, and review the activity feed — all from one place.",
+    code: "open http://localhost:3000",
+  },
+];
 
 function HowItWorksSection() {
-  const steps = [
-    {
-      step: 1,
-      title: "Install and configure",
-      description:
-        "Clone the repo, run the interactive setup, and create your organization. Takes about 10 minutes. Your agents get names, roles, and Telegram bots.",
-    },
-    {
-      step: 2,
-      title: "Agents come online",
-      description:
-        "Each agent boots in its own tmux session, reads its identity and goals, sets up its cron schedule, and messages you on Telegram when ready.",
-    },
-    {
-      step: 3,
-      title: "Work from anywhere",
-      description:
-        "Send tasks by message. Get briefings pushed to you. Approve or reject actions inline. View everything on the dashboard or mobile app.",
-    },
-  ];
-
   return (
-    <section className="py-20 px-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-14">
-          <h2
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{ color: "var(--foreground)", letterSpacing: "-0.02em" }}
-          >
-            Up in 10 minutes
-          </h2>
-          <p className="text-base" style={{ color: "var(--muted-foreground)" }}>
-            From zero to a running agent fleet.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {steps.map((s, i) => (
-            <div key={s.step} className="relative">
-              {/* Connector */}
-              {i < steps.length - 1 && (
-                <div
-                  className="hidden md:block absolute top-6 left-1/2 w-full h-px"
-                  style={{
-                    background:
-                      "repeating-linear-gradient(90deg, var(--border) 0, var(--border) 6px, transparent 6px, transparent 12px)",
-                    transform: "translateX(50%)",
-                  }}
-                />
-              )}
-
-              <div className="flex flex-col items-center text-center">
-                <div
-                  style={{
-                    backgroundColor: "var(--primary)",
-                    color: "var(--primary-foreground)",
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "700",
-                    fontSize: "18px",
-                    position: "relative",
-                    zIndex: 1,
-                    flexShrink: 0,
-                  }}
-                  className="mb-5"
-                >
-                  {s.step}
-                </div>
-                <h3
-                  className="text-lg font-semibold mb-3"
-                  style={{ color: "var(--foreground)" }}
-                >
-                  {s.title}
-                </h3>
-                <p
-                  className="text-sm leading-relaxed"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  {s.description}
-                </p>
-              </div>
+    <section
+      id="how-it-works"
+      className="py-24 border-t"
+      style={{ borderColor: "var(--border)" }}
+    >
+      <div className="max-w-5xl mx-auto px-6">
+        <FadeIn>
+          <div className="text-center mb-16">
+            <div
+              className="inline-flex items-center gap-1.5 text-xs font-medium mb-4"
+              style={{ color: "var(--primary)" }}
+            >
+              <Activity size={13} />
+              <span>How it works</span>
             </div>
+            <h2
+              className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
+              style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
+            >
+              From zero to orchestrated
+              <br />in minutes
+            </h2>
+          </div>
+        </FadeIn>
+
+        <div className="space-y-6">
+          {STEPS.map((step, i) => (
+            <FadeIn key={i} delay={i * 0.1}>
+              <div
+                className="group flex gap-6 p-6 rounded-2xl border transition-all duration-300 hover:shadow-sm"
+                style={{
+                  backgroundColor: "var(--card)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <div
+                  className="text-3xl font-bold shrink-0 w-14 text-right leading-none pt-1"
+                  style={{ color: "rgba(212,175,55,0.25)", letterSpacing: "-0.05em", fontVariantNumeric: "tabular-nums" }}
+                >
+                  {step.number}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3
+                    className="font-semibold text-lg mb-2"
+                    style={{ color: "var(--foreground)" }}
+                  >
+                    {step.title}
+                  </h3>
+                  <p
+                    className="text-sm leading-relaxed mb-4"
+                    style={{ color: "var(--muted-foreground)" }}
+                  >
+                    {step.description}
+                  </p>
+                  <div
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs"
+                    style={{
+                      backgroundColor: "rgba(20,20,20,0.06)",
+                      color: "var(--foreground)",
+                    }}
+                  >
+                    <Terminal size={11} style={{ color: "var(--primary)" }} />
+                    {step.code}
+                  </div>
+                </div>
+              </div>
+            </FadeIn>
           ))}
         </div>
       </div>
@@ -816,509 +720,500 @@ function HowItWorksSection() {
   );
 }
 
-// ─── QuickStartSection ───────────────────────────────────────────────────────
+// ─── Agent roster ──────────────────────────────────────────────────────────────
 
-const quickStartLines = [
-  { type: "comment", text: "# Clone and install" },
-  { type: "cmd", text: "git clone https://github.com/grandamenium/cortextos" },
-  { type: "cmd", text: "cd cortextos && npm install" },
-  { type: "blank" },
-  { type: "comment", text: "# Interactive setup — creates your org, agents, and Telegram bots" },
-  { type: "cmd", text: 'claude -p "/cortextos-setup"' },
-  { type: "blank" },
-  { type: "comment", text: "# Enable your first agent" },
-  { type: "cmd", text: "bash enable-agent.sh orchestrator" },
-  { type: "blank" },
-  { type: "comment", text: "# Launch the dashboard" },
-  { type: "cmd", text: "cd dashboard && npm run build && npm start" },
-  { type: "blank" },
-  { type: "comment", text: "# Your agent will message you on Telegram — you're live" },
+const AGENT_TYPES = [
+  { name: "Orchestrator", role: "Coordination & briefings", color: "#D4AF37", active: true },
+  { name: "Analyst", role: "Metrics & system health", color: "#60a5fa", active: true },
+  { name: "Developer", role: "Code & CI/CD", color: "#4ade80", active: true },
+  { name: "PA", role: "Email & calendar", color: "#c084fc", active: true },
+  { name: "Content", role: "Social & community", color: "#f97316", active: false },
+  { name: "Research", role: "Scraping & intel", color: "#2dd4bf", active: false },
 ];
 
-function QuickStartSection() {
+function AgentRosterSection() {
   return (
     <section
-      style={{ borderTop: "1px solid var(--border)" }}
-      className="py-20 px-6"
+      className="py-24 border-t"
+      style={{ borderColor: "var(--border)", backgroundColor: "rgba(0,0,0,0.01)" }}
     >
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-12">
-          <h2
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{ color: "var(--foreground)", letterSpacing: "-0.02em" }}
-          >
-            Quick start
-          </h2>
-          <p className="text-base" style={{ color: "var(--muted-foreground)" }}>
-            The exact commands to go from zero to running.
-          </p>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: "oklch(0.11 0 0)",
-            border: "1px solid oklch(0.27 0 0)",
-            borderRadius: "var(--radius-lg)",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "oklch(0.15 0 0)",
-              borderBottom: "1px solid oklch(0.22 0 0)",
-            }}
-            className="flex items-center gap-2 px-4 py-2.5"
-          >
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "oklch(0.55 0.2 27)" }} />
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "oklch(0.72 0.18 75)" }} />
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "oklch(0.55 0.18 145)" }} />
-            <span
-              style={{
-                fontFamily: "var(--font-mono)",
-                color: "oklch(0.55 0 0)",
-                fontSize: "12px",
-                marginLeft: "8px",
-              }}
-            >
-              bash
-            </span>
-          </div>
-
-          <pre
-            style={{
-              padding: "24px",
-              fontFamily: "var(--font-mono)",
-              fontSize: "13px",
-              lineHeight: "1.85",
-              overflowX: "auto",
-            }}
-          >
-            {quickStartLines.map((line, i) => {
-              if (line.type === "blank") {
-                return <div key={i}>&nbsp;</div>;
-              }
-              if (line.type === "comment") {
-                return (
-                  <div key={i} style={{ color: "oklch(0.5 0 0)" }}>
-                    {line.text}
-                  </div>
-                );
-              }
-              return (
-                <div key={i}>
-                  <span style={{ color: "var(--success)", userSelect: "none" }}>
-                    ${" "}
-                  </span>
-                  <span style={{ color: "#F8F7F4" }}>{line.text}</span>
-                </div>
-              );
-            })}
-          </pre>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── ComparisonTable ─────────────────────────────────────────────────────────
-
-function ComparisonTable() {
-  const rows = [
-    {
-      feature: "Agent persistence",
-      cortext: "Built in (launchd + tmux)",
-      diy: "You build it",
-      others: "Usually not included",
-    },
-    {
-      feature: "Multi-agent orchestration",
-      cortext: "Built in (bus, inbox, blocking)",
-      diy: "You wire it",
-      others: "Rarely full-stack",
-    },
-    {
-      feature: "Web dashboard",
-      cortext: "Included — Next.js, full-featured",
-      diy: "You build it",
-      others: "Usually not included",
-    },
-    {
-      feature: "Mobile app",
-      cortext: "iOS app (App Store)",
-      diy: "You build it",
-      others: "No",
-    },
-    {
-      feature: "Telegram control",
-      cortext: "Per-agent bots, push, callbacks",
-      diy: "You build it",
-      others: "No",
-    },
-    {
-      feature: "Memory system",
-      cortext: "Short-term + long-term, per agent",
-      diy: "You build it",
-      others: "Varies",
-    },
-    {
-      feature: "Approval gates",
-      cortext: "Built in — blocks before external actions",
-      diy: "You build it",
-      others: "Rarely",
-    },
-    {
-      feature: "Security audit",
-      cortext: "45 CVEs identified and fixed",
-      diy: "Your responsibility",
-      others: "Unknown",
-    },
-    {
-      feature: "Time to first agent",
-      cortext: "~10 minutes",
-      diy: "Weeks",
-      others: "Hours to days",
-    },
-  ];
-
-  return (
-    <section
-      style={{ borderTop: "1px solid var(--border)", backgroundColor: "#FFFFFF" }}
-      className="py-20 px-6"
-    >
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{ color: "var(--foreground)", letterSpacing: "-0.02em" }}
-          >
-            Why Cortext?
-          </h2>
-          <p className="text-base" style={{ color: "var(--muted-foreground)" }}>
-            The build-vs-buy math, laid out honestly.
-          </p>
-        </div>
-
-        <div className="table-scroll">
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "13px",
-            }}
-          >
-            <thead>
-              <tr style={{ borderBottom: "2px solid var(--border)" }}>
-                <th
-                  style={{
-                    color: "var(--muted-foreground)",
-                    textAlign: "left",
-                    padding: "10px 16px",
-                    fontWeight: 500,
-                    minWidth: "180px",
-                  }}
-                >
-                  Feature
-                </th>
-                <th
-                  style={{
-                    color: "var(--primary)",
-                    textAlign: "left",
-                    padding: "10px 16px",
-                    fontWeight: 700,
-                    minWidth: "220px",
-                  }}
-                >
-                  Cortext
-                </th>
-                <th
-                  style={{
-                    color: "var(--muted-foreground)",
-                    textAlign: "left",
-                    padding: "10px 16px",
-                    fontWeight: 500,
-                    minWidth: "180px",
-                  }}
-                >
-                  Roll your own
-                </th>
-                <th
-                  style={{
-                    color: "var(--muted-foreground)",
-                    textAlign: "left",
-                    padding: "10px 16px",
-                    fontWeight: 500,
-                    minWidth: "200px",
-                  }}
-                >
-                  Other frameworks
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr
-                  key={row.feature}
-                  style={{
-                    borderBottom: "1px solid var(--border)",
-                    backgroundColor:
-                      i % 2 === 0 ? "transparent" : "rgba(229,224,216,0.3)",
-                  }}
-                >
-                  <td
-                    style={{
-                      padding: "11px 16px",
-                      color: "var(--foreground)",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {row.feature}
-                  </td>
-                  <td
-                    style={{
-                      padding: "11px 16px",
-                      color: "#B8860B",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {row.cortext}
-                  </td>
-                  <td
-                    style={{
-                      padding: "11px 16px",
-                      color: "var(--muted-foreground)",
-                    }}
-                  >
-                    {row.diy}
-                  </td>
-                  <td
-                    style={{
-                      padding: "11px 16px",
-                      color: "var(--muted-foreground)",
-                    }}
-                  >
-                    {row.others}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── SecuritySection ─────────────────────────────────────────────────────────
-
-function SecuritySection() {
-  return (
-    <section
-      style={{ borderTop: "1px solid var(--border)" }}
-      className="py-20 px-6"
-    >
-      <div className="max-w-4xl mx-auto">
-        <div
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid var(--border)",
-            borderLeft: "3px solid var(--primary)",
-            borderRadius: "var(--radius-lg)",
-          }}
-          className="p-8"
-        >
-          <div className="flex items-start gap-4">
+      <div className="max-w-5xl mx-auto px-6">
+        <FadeIn>
+          <div className="text-center mb-16">
             <div
-              style={{
-                color: "#B8860B",
-                backgroundColor: "rgba(212,175,55,0.10)",
-                border: "1px solid rgba(212,175,55,0.25)",
-                borderRadius: "var(--radius-md)",
-                flexShrink: 0,
-              }}
-              className="p-2.5 mt-0.5"
+              className="inline-flex items-center gap-1.5 text-xs font-medium mb-4"
+              style={{ color: "var(--primary)" }}
             >
-              <Shield size={22} />
+              <Brain size={13} />
+              <span>Agent topology</span>
             </div>
+            <h2
+              className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
+              style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
+            >
+              Specialist agents,
+              <br />one orchestrator above
+            </h2>
+            <p
+              className="text-lg max-w-xl mx-auto"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              The orchestrator is the single point of contact. Every other agent is a specialist
+              that receives tasks, executes them, and reports back.
+            </p>
+          </div>
+        </FadeIn>
 
-            <div className="flex-1">
-              <h2
-                className="text-2xl md:text-3xl font-bold mb-4"
+        {/* Orchestrator at top */}
+        <FadeIn delay={0.1}>
+          <div className="flex justify-center mb-4">
+            <div
+              className="relative px-8 py-4 rounded-2xl border-2 text-center min-w-[200px] shadow-sm"
+              style={{
+                borderColor: "var(--primary)",
+                backgroundColor: "rgba(212,175,55,0.06)",
+              }}
+            >
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <StatusDot color="#D4AF37" />
+                <span
+                  className="font-bold text-lg"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  Orchestrator
+                </span>
+              </div>
+              <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                Coordinates · Routes · Briefs
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* Connector lines */}
+        <FadeIn delay={0.15}>
+          <div className="flex justify-center mb-4">
+            <div
+              className="w-px h-8"
+              style={{ backgroundColor: "var(--border)" }}
+            />
+          </div>
+          <div
+            className="mx-auto mb-4"
+            style={{
+              height: "1px",
+              maxWidth: "720px",
+              backgroundColor: "var(--border)",
+            }}
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 max-w-2xl mx-auto mb-6">
+            {AGENT_TYPES.filter((a) => a.name !== "Orchestrator").map((_, i, arr) => (
+              <div key={i} className="flex justify-center">
+                <div
+                  className="w-px h-6"
+                  style={{ backgroundColor: "var(--border)" }}
+                />
+              </div>
+            ))}
+          </div>
+        </FadeIn>
+
+        {/* Specialist agents */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 max-w-2xl mx-auto">
+          {AGENT_TYPES.filter((a) => a.name !== "Orchestrator").map((agent, i) => (
+            <FadeIn key={i} delay={0.2 + i * 0.07}>
+              <div
+                className="p-4 rounded-xl border text-center transition-all duration-200 hover:shadow-sm"
                 style={{
-                  color: "var(--foreground)",
-                  letterSpacing: "-0.02em",
+                  backgroundColor: "var(--card)",
+                  borderColor: "var(--border)",
                 }}
               >
-                We audited ourselves before you had to.
-              </h2>
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <StatusDot color={agent.active ? agent.color : "#9ca3af"} />
+                  <span className="font-medium text-sm" style={{ color: "var(--foreground)" }}>
+                    {agent.name}
+                  </span>
+                </div>
+                <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                  {agent.role}
+                </div>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-              <p
-                className="text-sm leading-relaxed mb-4"
-                style={{ color: "var(--muted-foreground)" }}
+// ─── Dashboard preview ────────────────────────────────────────────────────────
+
+function DashboardSection() {
+  return (
+    <section
+      className="py-24 border-t overflow-hidden"
+      style={{ borderColor: "var(--border)" }}
+    >
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="flex flex-col lg:flex-row items-center gap-12">
+          <FadeIn direction="right" className="flex-1">
+            <div
+              className="inline-flex items-center gap-1.5 text-xs font-medium mb-4"
+              style={{ color: "var(--primary)" }}
+            >
+              <LayoutDashboard size={13} />
+              <span>Dashboard</span>
+            </div>
+            <h2
+              className="text-4xl sm:text-5xl font-bold tracking-tight mb-6"
+              style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
+            >
+              Full visibility,
+              <br />zero friction
+            </h2>
+            <p
+              className="text-lg leading-relaxed mb-8"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              The web dashboard shows every agent&apos;s heartbeat, task queue,
+              memory state, and event log in real time. Approve actions without
+              touching a terminal.
+            </p>
+            <ul className="space-y-3">
+              {[
+                "Live heartbeat for every agent",
+                "Task queue with status tracking",
+                "Approval inbox for external actions",
+                "Activity feed with typed events",
+                "Agent memory browser",
+              ].map((item, i) => (
+                <li key={i} className="flex items-center gap-2.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                  <Check size={14} style={{ color: "var(--primary)" }} className="shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </FadeIn>
+
+          <FadeIn direction="left" delay={0.15} className="flex-1 w-full">
+            {/* Mock dashboard UI */}
+            <div
+              className="rounded-2xl border overflow-hidden shadow-2xl"
+              style={{
+                borderColor: "var(--border)",
+                backgroundColor: "var(--card)",
+              }}
+            >
+              {/* Titlebar */}
+              <div
+                className="flex items-center justify-between px-4 py-3 border-b"
+                style={{ borderColor: "var(--border)", backgroundColor: "rgba(248,247,244,0.7)" }}
               >
-                A full security audit completed on 2026-03-31 found 45
-                vulnerabilities across the bash layer, agent lifecycle
-                management, Telegram integration, and the Node.js dashboard
-                API. All four Critical findings are remediated. The audit
-                covered command injection, JWT verification failures, secrets
-                management, and inter-agent isolation.
-              </p>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "var(--primary)" }} />
+                  <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
+                    Cortext Dashboard
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <StatusDot />
+                  <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                    3 agents online
+                  </span>
+                </div>
+              </div>
 
-              <p
-                className="text-sm leading-relaxed mb-6"
-                style={{ color: "var(--muted-foreground)" }}
-              >
-                The findings and all remediation PRs are public on GitHub.
-                Shipping a security report alongside an AI infrastructure
-                framework is not optional — so we did it on day one.
-              </p>
-
-              <div className="grid grid-cols-3 gap-4 mb-6">
+              {/* Agent rows */}
+              <div className="p-4 space-y-2">
                 {[
-                  { label: "Vulnerabilities found", value: "45" },
-                  { label: "Critical — all fixed", value: "4" },
-                  { label: "High — 12 fixed", value: "16" },
-                ].map((stat) => (
-                  <div key={stat.label} className="text-center">
-                    <div
-                      className="text-2xl font-bold mb-0.5"
-                      style={{
-                        color: "#B8860B",
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    >
-                      {stat.value}
+                  { name: "paul", role: "Orchestrator", status: "active", tasks: 4, color: "#D4AF37" },
+                  { name: "sentinel", role: "Analyst", status: "active", tasks: 2, color: "#60a5fa" },
+                  { name: "boris", role: "Developer", status: "idle", tasks: 0, color: "#4ade80" },
+                ].map((agent, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-3 rounded-xl border"
+                    style={{
+                      borderColor: "var(--border)",
+                      backgroundColor: "rgba(255,255,255,0.5)",
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <StatusDot color={agent.status === "active" ? agent.color : "#9ca3af"} />
+                      <div>
+                        <div className="font-medium text-sm" style={{ color: "var(--foreground)" }}>
+                          {agent.name}
+                        </div>
+                        <div className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                          {agent.role}
+                        </div>
+                      </div>
                     </div>
-                    <div
-                      className="text-xs"
-                      style={{ color: "var(--muted-foreground)" }}
-                    >
-                      {stat.label}
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div
+                          className="text-xs font-medium"
+                          style={{ color: agent.tasks > 0 ? "var(--foreground)" : "var(--muted-foreground)" }}
+                        >
+                          {agent.tasks} task{agent.tasks !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full font-medium"
+                        style={{
+                          backgroundColor: agent.status === "active" ? "rgba(34,197,94,0.1)" : "rgba(0,0,0,0.05)",
+                          color: agent.status === "active" ? "#16a34a" : "var(--muted-foreground)",
+                        }}
+                      >
+                        {agent.status}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <a
-                href="https://github.com/grandamenium/cortextos"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#B8860B",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "13px",
-                }}
-                className="inline-flex items-center gap-1.5 hover:underline"
+              {/* Activity strip */}
+              <div
+                className="px-4 pb-4 space-y-1.5 border-t pt-3"
+                style={{ borderColor: "var(--border)" }}
               >
-                View security report on GitHub →
-              </a>
+                <div className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>
+                  Recent activity
+                </div>
+                {[
+                  { event: "task_completed", agent: "boris", detail: "PR merged to staging", time: "2m ago", color: "#4ade80" },
+                  { event: "approval_needed", agent: "donna", detail: "Send email to client", time: "8m ago", color: "#f59e0b" },
+                  { event: "session_start", agent: "sentinel", detail: "Metrics collection cycle", time: "15m ago", color: "#60a5fa" },
+                ].map((event, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
+                    <span
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: event.color }}
+                    />
+                    <span className="font-medium shrink-0" style={{ color: "var(--foreground)" }}>
+                      {event.agent}
+                    </span>
+                    <span className="truncate">{event.detail}</span>
+                    <span className="shrink-0 ml-auto">{event.time}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </FadeIn>
         </div>
       </div>
     </section>
   );
 }
 
-// ─── CTASection ───────────────────────────────────────────────────────────────
+// ─── Telegram section ─────────────────────────────────────────────────────────
+
+function TelegramSection() {
+  const messages = [
+    { from: "james", text: "Draft a competitive analysis report on our top 3 rivals", time: "09:14" },
+    { from: "paul", text: "On it. Routing to data agent for research. Task created: comp-analysis-march.", time: "09:14" },
+    { from: "paul", text: "Research complete. Routing to analyst for synthesis. ETA 20 minutes.", time: "09:22" },
+    { from: "paul", text: "Done. Full report in /knowledge-base/competitors-mar31.md — 3 key findings flagged. Want me to draft a strategic response?", time: "09:44" },
+  ];
+
+  return (
+    <section
+      className="py-24 border-t"
+      style={{ borderColor: "var(--border)" }}
+    >
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="flex flex-col lg:flex-row-reverse items-center gap-12">
+          <FadeIn direction="left" className="flex-1">
+            <div
+              className="inline-flex items-center gap-1.5 text-xs font-medium mb-4"
+              style={{ color: "var(--primary)" }}
+            >
+              <MessageCircle size={13} />
+              <span>Telegram control</span>
+            </div>
+            <h2
+              className="text-4xl sm:text-5xl font-bold tracking-tight mb-6"
+              style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
+            >
+              Your agents,
+              <br />in your pocket
+            </h2>
+            <p
+              className="text-lg leading-relaxed mb-8"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              Message your orchestrator on Telegram. It routes work to the right
+              agents, handles coordination, and reports back with results.
+              Morning briefings, evening summaries, and instant alerts — all
+              delivered without you asking.
+            </p>
+            <ul className="space-y-3">
+              {[
+                "Real-time directives to orchestrator",
+                "Morning and evening briefings",
+                "Approval requests with one-tap decisions",
+                "Instant alerts on blockers or completions",
+              ].map((item, i) => (
+                <li key={i} className="flex items-center gap-2.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                  <Check size={14} style={{ color: "var(--primary)" }} className="shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </FadeIn>
+
+          <FadeIn direction="right" delay={0.15} className="flex-1 w-full max-w-sm mx-auto lg:mx-0">
+            {/* Phone mockup */}
+            <div
+              className="rounded-[2.5rem] border-4 overflow-hidden shadow-2xl"
+              style={{ borderColor: "rgba(0,0,0,0.12)", backgroundColor: "#f2f2f7" }}
+            >
+              {/* Status bar */}
+              <div className="bg-white px-5 pt-3 pb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold">9:41</span>
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 w-24 h-5 rounded-full"
+                  style={{ backgroundColor: "#000" }}
+                />
+                <div className="flex gap-1 items-center">
+                  <div className="flex gap-0.5">
+                    {[3, 4, 5].map((h) => (
+                      <div key={h} className="w-0.5 rounded-sm bg-black" style={{ height: h }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Chat header */}
+              <div className="bg-white px-4 py-3 border-b flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
+                  style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+                >
+                  C
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Cortext</div>
+                  <div className="text-xs text-green-500">● online</div>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="px-3 py-3 space-y-2 bg-white min-h-[280px]">
+                {messages.map((msg, i) => (
+                  <FadeIn key={i} delay={0.3 + i * 0.1}>
+                    <div
+                      className={`flex ${msg.from === "james" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className="max-w-[80%] px-3 py-2 rounded-2xl text-xs leading-relaxed"
+                        style={{
+                          backgroundColor: msg.from === "james" ? "#007aff" : "#e9e9eb",
+                          color: msg.from === "james" ? "white" : "#000",
+                          borderRadius:
+                            msg.from === "james"
+                              ? "18px 18px 4px 18px"
+                              : "18px 18px 18px 4px",
+                        }}
+                      >
+                        {msg.text}
+                        <div
+                          className="text-right mt-1 opacity-60"
+                          style={{ fontSize: "10px" }}
+                        >
+                          {msg.time}
+                        </div>
+                      </div>
+                    </div>
+                  </FadeIn>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── CTA ─────────────────────────────────────────────────────────────────────
 
 function CTASection() {
   return (
     <section
-      style={{
-        borderTop: "1px solid var(--border)",
-        backgroundColor: "var(--foreground)",
-      }}
-      className="py-20 px-6 text-center"
+      className="py-24 border-t"
+      style={{ borderColor: "var(--border)" }}
     >
-      <div className="max-w-2xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold mb-4"
-          style={{ color: "var(--background)", letterSpacing: "-0.02em" }}
-        >
-          Start building today.
-        </h2>
-        <p
-          className="text-base mb-10"
-          style={{ color: "rgba(248,247,244,0.65)" }}
-        >
-          Cortext is open source. Clone it, run setup, and have a full agent
-          fleet running in under 10 minutes.
-        </p>
-
-        <div
-          style={{
-            backgroundColor: "oklch(0.17 0 0)",
-            border: "1px solid oklch(0.28 0 0)",
-            borderRadius: "var(--radius-lg)",
-            overflow: "hidden",
-            textAlign: "left",
-            marginBottom: "32px",
-          }}
-        >
+      <div className="max-w-4xl mx-auto px-6 text-center">
+        <FadeIn>
           <div
-            style={{
-              borderBottom: "1px solid oklch(0.24 0 0)",
-              backgroundColor: "oklch(0.14 0 0)",
-            }}
-            className="px-4 py-2"
+            className="inline-flex items-center gap-1.5 text-xs font-medium mb-6"
+            style={{ color: "var(--primary)" }}
           >
-            <span
+            <Star size={12} />
+            <span>Open source · free to self-host</span>
+          </div>
+          <h2
+            className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6"
+            style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
+          >
+            Your agents are ready.
+            <br />
+            <span style={{ color: "var(--primary)" }}>Are you?</span>
+          </h2>
+          <p
+            className="text-lg max-w-xl mx-auto mb-10"
+            style={{ color: "var(--muted-foreground)" }}
+          >
+            Cortext is free and open source. Self-host in minutes. Run as many
+            agents as you need. No per-seat pricing, no vendor lock-in.
+          </p>
+
+          {/* Final install block */}
+          <div
+            className="inline-flex items-center gap-3 px-5 py-3 rounded-xl border font-mono text-sm mb-8"
+            style={{
+              backgroundColor: "rgba(20,20,20,0.06)",
+              borderColor: "var(--border)",
+              color: "var(--foreground)",
+            }}
+          >
+            <span style={{ color: "var(--primary)" }}>$</span>
+            <span>npx cortext init</span>
+            <CopyButton text="npx cortext init" />
+          </div>
+
+          <div className="flex flex-wrap gap-3 justify-center">
+            <a
+              href="https://github.com/grandamenium/cortextos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-medium transition-all duration-200 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
               style={{
-                fontFamily: "var(--font-mono)",
-                color: "oklch(0.5 0 0)",
-                fontSize: "11px",
+                backgroundColor: "var(--primary)",
+                color: "var(--primary-foreground)",
               }}
             >
-              bash
-            </span>
+              <Github size={16} />
+              Star on GitHub
+            </a>
+            <a
+              href="https://github.com/grandamenium/cortextos/blob/main/README.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-medium border transition-all duration-200 hover:opacity-80 hover:-translate-y-0.5 active:scale-95"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--foreground)",
+                backgroundColor: "var(--card)",
+              }}
+            >
+              Read the docs
+              <ArrowRight size={14} />
+            </a>
           </div>
-          <pre
-            style={{
-              padding: "20px",
-              fontFamily: "var(--font-mono)",
-              fontSize: "13px",
-              lineHeight: "1.85",
-              overflowX: "auto",
-            }}
-          >
-            {[
-              "git clone https://github.com/grandamenium/cortextos",
-              "cd cortextos && npm install",
-              'claude -p "/cortextos-setup"',
-            ].map((line, i) => (
-              <div key={i}>
-                <span
-                  style={{ color: "var(--success)", userSelect: "none" }}
-                >
-                  ${" "}
-                </span>
-                <span style={{ color: "#F8F7F4" }}>{line}</span>
-              </div>
-            ))}
-          </pre>
-        </div>
-
-        <div className="flex items-center justify-center gap-6">
-          <a
-            href="https://github.com/grandamenium/cortextos"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "#F8F7F4" }}
-            className="flex items-center gap-1.5 text-sm font-medium hover:underline"
-          >
-            <Github size={15} />
-            GitHub →
-          </a>
-          <a
-            href="https://github.com/grandamenium/cortextos/blob/main/README.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "rgba(248,247,244,0.55)" }}
-            className="text-sm hover:text-white transition-colors"
-          >
-            Read the docs →
-          </a>
-        </div>
+        </FadeIn>
       </div>
     </section>
   );
@@ -1329,51 +1224,79 @@ function CTASection() {
 function Footer() {
   return (
     <footer
-      style={{ borderTop: "1px solid var(--border)" }}
-      className="py-6 px-6"
+      className="border-t py-12"
+      style={{ borderColor: "var(--border)" }}
     >
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-        <span
-          style={{ color: "var(--foreground)", fontSize: "14px", fontWeight: 700 }}
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div>
+            <div
+              className="font-bold text-lg mb-1 tracking-tight"
+              style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
+            >
+              Cortext
+            </div>
+            <div className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+              The intelligence layer above your agents.
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 text-sm" style={{ color: "var(--muted-foreground)" }}>
+            <a
+              href="https://github.com/grandamenium/cortextos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
+            >
+              <Github size={14} />
+              GitHub
+            </a>
+            <a
+              href="https://github.com/grandamenium/cortextos/blob/main/README.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-70 transition-opacity"
+            >
+              Docs
+            </a>
+            <a
+              href="https://github.com/grandamenium/cortextos/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-70 transition-opacity"
+            >
+              Issues
+            </a>
+          </div>
+        </div>
+
+        <div
+          className="mt-8 pt-6 border-t text-center text-xs"
+          style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}
         >
-          Cortext
-        </span>
-        <span style={{ color: "var(--muted-foreground)", fontSize: "12px" }}>
-          Open source · MIT License · Built for Claude Code agents
-        </span>
-        <a
-          href="https://github.com/grandamenium/cortextos"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "var(--muted-foreground)", fontSize: "12px" }}
-          className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
-        >
-          <Github size={13} />
-          grandamenium/cortextos
-        </a>
+          © {new Date().getFullYear()} Cortext. Open source under MIT license.
+          Built with Claude.
+        </div>
       </div>
     </footer>
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Page() {
   return (
-    <>
+    <main style={{ backgroundColor: "var(--background)" }}>
       <NavBar />
-      <main>
-        <HeroSection />
-        <ProblemBanner />
-        <FeaturesSection />
-        <ArchitectureSection />
-        <HowItWorksSection />
-        <QuickStartSection />
-        <ComparisonTable />
-        <SecuritySection />
-        <CTASection />
-      </main>
+      <HeroSection />
+      <StatsSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <AgentRosterSection />
+      <DashboardSection />
+      <TelegramSection />
+      <CTASection />
       <Footer />
-    </>
+    </main>
   );
 }
