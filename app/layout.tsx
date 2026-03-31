@@ -1,10 +1,23 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "cortextOS — AI agents that run 24/7",
+  title: "Cortext — AI agents that run 24/7",
   description:
-    "cortextOS keeps Claude Code agents alive, orchestrated, and reachable over Telegram — no infrastructure configuration required.",
+    "Cortext keeps Claude Code agents alive, orchestrated, and reachable over Telegram. Persistence, multi-agent coordination, and a dashboard — out of the box.",
   keywords: [
     "AI agents",
     "Claude Code",
@@ -12,22 +25,22 @@ export const metadata: Metadata = {
     "automation",
     "Telegram bot",
     "open source",
-    "cortextOS",
+    "Cortext",
   ],
-  authors: [{ name: "cortextOS" }],
+  authors: [{ name: "Cortext" }],
   openGraph: {
-    title: "cortextOS — AI agents that run 24/7",
+    title: "Cortext — AI agents that run 24/7",
     description:
-      "cortextOS keeps Claude Code agents alive, orchestrated, and reachable over Telegram — no infrastructure configuration required.",
-    url: "https://cortextos.dev",
-    siteName: "cortextOS",
+      "Cortext keeps Claude Code agents alive, orchestrated, and reachable over Telegram. Persistence, multi-agent coordination, and a dashboard — out of the box.",
+    url: "https://cortext.dev",
+    siteName: "Cortext",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "cortextOS — AI agents that run 24/7",
+    title: "Cortext — AI agents that run 24/7",
     description:
-      "cortextOS keeps Claude Code agents alive, orchestrated, and reachable over Telegram — no infrastructure configuration required.",
+      "Cortext keeps Claude Code agents alive, orchestrated, and reachable over Telegram. Persistence, multi-agent coordination, and a dashboard — out of the box.",
   },
   robots: {
     index: true,
@@ -41,8 +54,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body style={{ fontFamily: "var(--font-inter, system-ui, sans-serif)" }}>
+        {children}
+      </body>
     </html>
   );
 }
