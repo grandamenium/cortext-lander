@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/* ============================================
+   cortextOS Landing Page — CSS Custom Properties
+   Light theme, off-white/gold — matched to dashboard light mode
+   ============================================ */
+
+:root {
+  --background: oklch(0.975 0.005 80);           /* #F8F7F4 — off-white */
+  --foreground: oklch(0.187 0 0);                /* #1A1A1A — dark text */
+  --card: oklch(1 0 0);                          /* #FFFFFF — white cards */
+  --card-foreground: oklch(0.187 0 0);
+  --primary: oklch(0.762 0.125 82);              /* #D4AF37 — gold accent */
+  --primary-foreground: oklch(0.145 0 0);
+  --secondary: oklch(0.975 0.005 80);            /* #F8F7F4 */
+  --secondary-foreground: oklch(0.187 0 0);
+  --muted: oklch(0.975 0.005 80);
+  --muted-foreground: oklch(0.478 0 0);          /* #666666 */
+  --accent: oklch(0.618 0.13 75);               /* #B8860B — dark goldenrod */
+  --accent-foreground: oklch(0.187 0 0);
+  --border: oklch(0.905 0.01 70);               /* #E5E0D8 — warm light border */
+  --input: oklch(0.905 0.01 70);
+  --ring: oklch(0.762 0.125 82);
+  --success: oklch(0.555 0.17 145);             /* #16A34A green */
+  --warning: oklch(0.72 0.17 75);               /* #F59E0B amber */
+  --destructive: oklch(0.577 0.245 27.325);     /* #DC2626 red */
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* Base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Agent status pulse */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Blinking cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Code block horizontal scroll — never wrap */
+pre, code {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+pre {
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Table responsive wrapper */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
