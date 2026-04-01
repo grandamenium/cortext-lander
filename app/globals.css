@@ -47,6 +47,7 @@
   --color-warning: var(--warning);
   --color-destructive: var(--destructive);
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --font-display: var(--font-display, Georgia, serif);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

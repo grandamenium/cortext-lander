@@ -331,7 +331,7 @@ export default function Page() {
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.18 }}
-              style={{ fontSize: "clamp(36px, 6vw, 64px)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.04em", color: "var(--foreground)", margin: 0 }}
+              style={{ fontSize: "clamp(36px, 6vw, 64px)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.04em", color: "var(--foreground)", margin: 0, fontFamily: "var(--font-display), Georgia, serif" }}
             >
               The intelligence layer<br />
               <span style={{ color: "var(--primary)" }}>above your agents.</span>
@@ -400,7 +400,7 @@ export default function Page() {
         <section style={{ borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", backgroundColor: "#FFFFFF", padding: "48px 24px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }}>
             <FadeIn><StatCounter end={247} suffix="+" label="agents deployed" /></FadeIn>
-            <FadeIn delay={0.1}><StatCounter end={99} suffix="%" label="uptime (launchd + auto-restart)" /></FadeIn>
+            <FadeIn delay={0.1}><StatCounter end={99} suffix="%" label="uptime (PM2 + auto-restart)" /></FadeIn>
             <FadeIn delay={0.2}><StatCounter end={14000} suffix="+" label="tasks completed" /></FadeIn>
           </div>
         </section>
@@ -424,14 +424,14 @@ export default function Page() {
           <div style={{ maxWidth: 1152, margin: "0 auto" }}>
             <FadeIn>
               <div style={{ textAlign: "center", marginBottom: 56 }}>
-                <h2 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 12px" }}>Everything you&apos;d build. Already built.</h2>
+                <h2 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 12px", fontFamily: "var(--font-display), Georgia, serif" }}>Everything you&apos;d build. Already built.</h2>
                 <p style={{ fontSize: 16, color: "var(--muted-foreground)", margin: 0 }}>The infrastructure layer so you can focus on what your agents actually do.</p>
               </div>
             </FadeIn>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
               {[
-                { icon: <RefreshCw size={18} />, title: "Always-on persistence", desc: "Agents survive crashes, context exhaustion, and reboots. Auto-restart via launchd, session continuation via tmux, and heartbeat monitoring keep every agent alive." },
+                { icon: <RefreshCw size={18} />, title: "Always-on persistence", desc: "Agents survive crashes, context exhaustion, and reboots. Auto-restart via PM2 and heartbeat monitoring keep every agent alive." },
                 { icon: <GitBranch size={18} />, title: "Multi-agent orchestration", desc: "An orchestrator decomposes goals and delegates to specialists. Agents block on dependencies, surface approvals, and resume automatically — no wiring required." },
                 { icon: <MessageCircle size={18} />, title: "Telegram control", desc: "Every agent gets its own Telegram bot. Send tasks, receive briefings, approve or reject actions inline — all in a chat that&apos;s always in your pocket." },
                 { icon: <LayoutDashboard size={18} />, title: "Full-featured dashboard", desc: "A Next.js dashboard ships with the framework. Tasks, approvals, activity feed, agent health, knowledge base, analytics — ready to run." },
@@ -463,7 +463,7 @@ export default function Page() {
           <div style={{ maxWidth: 760, margin: "0 auto" }}>
             <FadeIn>
               <div style={{ textAlign: "center", marginBottom: 52 }}>
-                <h2 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 12px" }}>How it works</h2>
+                <h2 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 12px", fontFamily: "var(--font-display), Georgia, serif" }}>How it works</h2>
                 <p style={{ fontSize: 16, color: "var(--muted-foreground)", margin: 0 }}>One orchestrator. Many specialists. One bus.</p>
               </div>
             </FadeIn>
@@ -511,14 +511,14 @@ export default function Page() {
           <div style={{ maxWidth: 900, margin: "0 auto" }}>
             <FadeIn>
               <div style={{ textAlign: "center", marginBottom: 56 }}>
-                <h2 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 12px" }}>Up in 10 minutes</h2>
+                <h2 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 12px", fontFamily: "var(--font-display), Georgia, serif" }}>Up in 10 minutes</h2>
                 <p style={{ fontSize: 16, color: "var(--muted-foreground)", margin: 0 }}>From zero to a running agent fleet.</p>
               </div>
             </FadeIn>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32 }}>
               {[
                 { n: 1, title: "Install and configure", body: "Clone the repo, run the interactive setup, and create your organization. Takes about 10 minutes. Your agents get names, roles, and Telegram bots." },
-                { n: 2, title: "Agents come online", body: "Each agent boots in its own tmux session, reads its identity and goals, sets up its cron schedule, and messages you on Telegram when ready." },
+                { n: 2, title: "Agents come online", body: "Each agent boots as a managed PM2 process, reads its identity and goals, sets up its cron schedule, and messages you on Telegram when ready." },
                 { n: 3, title: "Work from anywhere", body: "Send tasks by message. Receive briefings pushed to you. Approve or reject actions inline. View everything on the dashboard or mobile app." },
               ].map((s, i) => (
                 <FadeIn key={s.n} delay={i * 0.1}>
@@ -540,7 +540,7 @@ export default function Page() {
           <div style={{ maxWidth: 680, margin: "0 auto" }}>
             <FadeIn>
               <div style={{ textAlign: "center", marginBottom: 40 }}>
-                <h2 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 12px" }}>Quick start</h2>
+                <h2 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 12px", fontFamily: "var(--font-display), Georgia, serif" }}>Quick start</h2>
                 <p style={{ fontSize: 16, color: "var(--muted-foreground)", margin: 0 }}>The exact commands to go from zero to running.</p>
               </div>
             </FadeIn>
